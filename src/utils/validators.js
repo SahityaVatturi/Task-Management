@@ -69,6 +69,4 @@ module.exports = {
   updateProfileSchema,
   createTaskSchema,
   updateTaskSchema,
-  getTaskByIdSchema,
-  getTasksByUserSchema,
 };

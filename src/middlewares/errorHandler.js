@@ -1,9 +1,7 @@
 /**
  * Middleware for handling errors in the application.
- *
  * This function logs the error stack for debugging purposes and sends a JSON response
  * with the appropriate HTTP status code and error message. It defaults to a 500 status code
- * and a generic "Internal Server Error" message if no specific status code or message is provided.
  *
  * @param {Object} err - The error object containing details about the error.
  * @param {Object} req - The HTTP request object.
