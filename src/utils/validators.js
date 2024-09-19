@@ -46,25 +46,17 @@ const updateProfileSchema = Joi.object({
 const createTaskSchema = Joi.object({
   title: Joi.string().min(3).max(100).required(),
   description: Joi.string().max(500).optional(),
-  //   dueDate: Joi.date().optional(),
+  dueDate: Joi.date().optional(),
   status: Joi.string().valid("pending", "in-progress", "completed").optional(),
 });
 
 const updateTaskSchema = Joi.object({
   title: Joi.string().min(3).max(100).optional(),
   description: Joi.string().max(500).optional(),
-//   dueDate: Joi.date().optional(),
+  dueDate: Joi.date().optional(),
   status: Joi.string().valid("pending", "in-progress", "completed").optional(),
 });
 
-// No body required for GET requests
-const getTaskByIdSchema = Joi.object({
-  id: Joi.string().required(), // Assume ID is a string
-});
-
-const getTasksByUserSchema = Joi.object({
-  userId: Joi.string().required(), // Assume user ID is a string
-});
 
 module.exports = {
   registerSchema,
