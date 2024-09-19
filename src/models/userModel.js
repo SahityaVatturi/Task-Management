@@ -20,8 +20,8 @@ const userSchema = new Schema({
     required: true,
   },
   // Add additional fields as needed
-  resetPasswordToken: { type: String, required: false },
-  resetPasswordExpires: { type: Date, required: false },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 });
 
 const User = mongoose.model("User", userSchema, "users");

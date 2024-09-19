@@ -84,7 +84,7 @@ const refreshToken = async (req, res) => {
       return res.status(403).json({ message: "User not found" });
     }
 
-    const newToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const newToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
     res.status(200).json({ token: newToken });
   } catch (error) {

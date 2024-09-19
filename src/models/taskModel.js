@@ -17,9 +17,9 @@ const taskSchema = new Schema(
       enum: ["pending", "in-progress", "completed"],
       default: "pending",
     },
-    // dueDate: {
-    //   type: Date,
-    // },
+    dueDate: {
+      type: Date,
+    },
     // Reference to the user who created the task
     user: {
       type: Schema.Types.ObjectId,
@@ -28,7 +28,7 @@ const taskSchema = new Schema(
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt fields
+    timestamps: true,
   }
 );
 
