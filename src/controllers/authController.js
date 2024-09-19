@@ -4,10 +4,10 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 
 /**
- * Register a new user
+ * Registers a new user with the provided username, email, and password.
  *
- * @param {Object} req - The incoming request
- * @param {Object} res - The outgoing response
+ * @param {Object} req - The HTTP request object containing user details.
+ * @param {Object} res - The HTTP response object with user and token data or error message.
  */
 const register = async (req, res) => {
   try {
@@ -22,7 +22,7 @@ const register = async (req, res) => {
 
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" }); // change the expiresIn value to suit your needs
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
     res.status(201).json({ user, token });
   } catch (error) {
@@ -30,7 +30,12 @@ const register = async (req, res) => {
   }
 };
 
-// Login a user
+/**
+ * Authenticates a user and returns a JWT token if credentials are valid.
+ *
+ * @param {Object} req - The HTTP request object containing email and password.
+ * @param {Object} res - The HTTP response object with user and token data or error message.
+ */
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -40,7 +45,7 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" }); // change the expiresIn value to suit your needs
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
     res.status(200).json({ user, token });
   } catch (error) {
@@ -48,13 +53,22 @@ const login = async (req, res) => {
   }
 };
 
-// Logout a user (handle on client-side, clearing tokens)
+/**
+ * Logs out the user. No server-side action is needed for JWT logout.
+ *
+ * @param {Object} req - The HTTP request object.
+ * @param {Object} res - The HTTP response object confirming logout.
+ */
 const logout = (req, res) => {
-  // No actual operation needed server-side for JWT logout.
   res.status(200).json({ message: "Logged out successfully" });
 };
 
-// Refresh JWT token
+/**
+ * Refreshes the JWT token using a valid refresh token.
+ *
+ * @param {Object} req - The HTTP request object containing the refresh token.
+ * @param {Object} res - The HTTP response object with a new token or error message.
+ */
 const refreshToken = async (req, res) => {
   const refreshToken = req.body.refreshToken;
 
@@ -78,7 +92,12 @@ const refreshToken = async (req, res) => {
   }
 };
 
-// Forgot password - sends a reset token
+/**
+ * Sends a password reset token to the user's email for password recovery.
+ *
+ * @param {Object} req - The HTTP request object containing the user's email.
+ * @param {Object} res - The HTTP response object with the reset token or error message.
+ */
 const forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -98,7 +117,12 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// Reset password using the reset token
+/**
+ * Resets the user's password using the provided reset token and new password.
+ *
+ * @param {Object} req - The HTTP request object containing the reset token and new password.
+ * @param {Object} res - The HTTP response object confirming password reset or error message.
+ */
 const resetPassword = async (req, res) => {
   try {
     const resetPasswordToken = crypto.createHash("sha256").update(req.body.token).digest("hex");
@@ -123,10 +147,15 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// Get user profile
+/**
+ * Retrieves the profile information of the authenticated user.
+ *
+ * @param {Object} req - The HTTP request object with authenticated user details.
+ * @param {Object} res - The HTTP response object with user profile data or error message.
+ */
 const getProfile = async (req, res) => {
   try {
-    const user = req.user; // req.user is populated by authMiddleware
+    const user = req.user;
     const { _id, username, email } = user;
     res.status(200).json({ _id, username, email });
   } catch (error) {
@@ -134,7 +163,12 @@ const getProfile = async (req, res) => {
   }
 };
 
-// Update user profile
+/**
+ * Updates the profile information of the authenticated user.
+ *
+ * @param {Object} req - The HTTP request object containing fields to update.
+ * @param {Object} res - The HTTP response object with updated profile data or error message.
+ */
 const updateProfile = async (req, res) => {
   try {
     const updates = Object.keys(req.body);
@@ -148,7 +182,7 @@ const updateProfile = async (req, res) => {
       req.user[update] = req.body[update];
     });
     if (req.body.password) {
-      req.user.password = await bcrypt.hash(req.body.password, 10); // Hash new password if updated
+      req.user.password = await bcrypt.hash(req.body.password, 10);
     }
     await req.user.save();
     const { _id, username, email } = req.user;

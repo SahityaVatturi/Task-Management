@@ -1,10 +1,10 @@
 const Task = require("../models/taskModel");
 
 /**
- * Create a new task for the authenticated user
+ * Creates a new task for the authenticated user.
  *
- * @param {Object} req - The incoming request
- * @param {Object} res - The outgoing response
+ * @param {Object} req - The HTTP request object containing the task data.
+ * @param {Object} res - The HTTP response object to send back the created task.
  */
 const createTask = async (req, res) => {
   const { title, description, status } = req.body;
@@ -19,14 +19,13 @@ const createTask = async (req, res) => {
 };
 
 /**
- * Get all tasks for the authenticated user
+ * Retrieves all tasks associated with the authenticated user.
  *
- * @param {Object} req - The incoming request
- * @param {Object} res - The outgoing response
+ * @param {Object} req - The HTTP request object (user ID is accessed from the request object).
+ * @param {Object} res - The HTTP response object containing the list of tasks.
  */
 const getAllTasks = async (req, res) => {
   try {
-    // Get authenticated user ID
     const user = req.user._id;
     const tasks = await Task.find({ user }).select("_id title description status createdAt updatedAt");
     res.status(200).json(tasks);
@@ -36,14 +35,13 @@ const getAllTasks = async (req, res) => {
 };
 
 /**
- * Get a specific task by ID for the authenticated user
+ * Retrieves a specific task by its ID for the authenticated user.
  *
- * @param {Object} req - The incoming request
- * @param {Object} res - The outgoing response
+ * @param {Object} req - The HTTP request object containing the task ID as a URL parameter.
+ * @param {Object} res - The HTTP response object containing the task data or an error message.
  */
 const getTaskById = async (req, res) => {
   try {
-    // Get authenticated user ID
     const user = req.user._id;
     const task = await Task.findOne({ _id: req.params.id, user });
     if (!task) {
@@ -56,22 +54,15 @@ const getTaskById = async (req, res) => {
 };
 
 /**
- * Update a task by ID for the authenticated user
+ * Updates a specific task by its ID for the authenticated user.
  *
- * @param {Object} req - The incoming request
- * @param {Object} res - The outgoing response
+ * @param {Object} req - The HTTP request object containing the task ID and update data.
+ * @param {Object} res - The HTTP response object containing the updated task or an error message.
  */
 const updateTask = async (req, res) => {
   try {
-    // Get authenticated user ID
     const user = req.user._id;
-
-    // Update the task with the given ID if it belongs to the current user
-    const task = await Task.findOneAndUpdate(
-      { _id: req.params.id, user },
-      req.body,
-      { new: true, runValidators: true } // Return the updated document and run validators
-    );
+    const task = await Task.findOneAndUpdate({ _id: req.params.id, user }, req.body, { new: true, runValidators: true });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found or you are not authorized" });
@@ -84,17 +75,14 @@ const updateTask = async (req, res) => {
 };
 
 /**
- * Delete a task by ID for the authenticated user
+ * Deletes a specific task by its ID for the authenticated user.
  *
- * @param {Object} req - The incoming request
- * @param {Object} res - The outgoing response
+ * @param {Object} req - The HTTP request object containing the task ID as a URL parameter.
+ * @param {Object} res - The HTTP response object confirming the deletion or an error message.
  */
 const deleteTask = async (req, res) => {
   try {
-    // Get authenticated user ID
     const user = req.user._id;
-
-    // Delete the task with the given ID if it belongs to the current user
     const task = await Task.findOneAndDelete({ _id: req.params.id, user });
 
     if (!task) {
