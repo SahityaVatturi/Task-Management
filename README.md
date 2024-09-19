@@ -31,7 +31,7 @@ This is a full-stack Task Management application built with Node.js, Express, Mo
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/SahityaVatturi/task-management-app.git
+   git clone https://github.com/SahityaVatturi/Task-Management.git
    cd task-management-app
    ```
 
