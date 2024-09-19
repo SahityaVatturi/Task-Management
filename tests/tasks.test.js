@@ -1,21 +1,15 @@
 const mongoose = require("mongoose");
 const request = require("supertest");
 const { MongoMemoryServer } = require("mongodb-memory-server");
-const { createServer } = require("../index");
+const app = require("../index");
 
-let app;
 let mongoServer;
 let token;
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
-  await mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-
-  app = createServer();
+  await mongoose.connect(uri);
 
   // Register and login a user to get a valid token for the task tests
   await request(app).post("/api/auth/register").send({
