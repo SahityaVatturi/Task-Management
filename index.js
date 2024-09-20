@@ -24,6 +24,9 @@ app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 
+// Enable Express to trust proxies
+app.set("trust proxy", 1);
+
 // Apply rate limiting to authentication routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
