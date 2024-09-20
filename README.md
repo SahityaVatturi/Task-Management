@@ -60,7 +60,8 @@ This is a full-stack Task Management application built with Node.js, Express, Mo
 5. **Frontend Setup:**
    Navigate to the `frontend` directory and set up the React application:
    ```bash
-   cd frontend
+   git clone https://github.com/SahityaVatturi/Task-Management-FE.git
+   cd task-management-fe
    npm install
    npm start
    ```
