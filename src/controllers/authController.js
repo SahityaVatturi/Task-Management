@@ -30,7 +30,7 @@ const register = async (req, res) => {
     });
     await newUser.save();
 
-    res.status(201).json({ message: responseMessages.REGISTRATION_SUCCESS, token });
+    res.status(201).json({ message: responseMessages.REGISTRATION_SUCCESS });
   } catch (error) {
     console.log(error.stack);
     res.status(500).json({ error: error.message });
