@@ -2,7 +2,8 @@ const Joi = require("joi");
 
 // Authentication schemas
 const registerSchema = Joi.object({
-  username: Joi.string().min(3).max(30).required(),
+  firstName: Joi.string().min(3).max(30).required(),
+  lastName: Joi.string().min(3).max(30).required(),
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
 });
@@ -29,14 +30,9 @@ const resetPasswordSchema = Joi.object({
   newPassword: Joi.string().min(6).required(),
 });
 
-const profileSchema = Joi.object({
-  username: Joi.string().min(3).max(30).optional(),
-  email: Joi.string().email().optional(),
-  // Add other profile fields if necessary
-});
-
 const updateProfileSchema = Joi.object({
-  username: Joi.string().min(3).max(30).optional(),
+  firstName: Joi.string().min(3).max(30).optional(),
+  lastName: Joi.string().min(3).max(30).optional(),
   email: Joi.string().email().optional(),
   password: Joi.string().min(6).optional(),
   // Add other profile fields if necessary
@@ -57,7 +53,6 @@ const updateTaskSchema = Joi.object({
   status: Joi.string().valid("pending", "in-progress", "completed").optional(),
 });
 
-
 module.exports = {
   registerSchema,
   loginSchema,
@@ -65,7 +60,6 @@ module.exports = {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  profileSchema,
   updateProfileSchema,
   createTaskSchema,
   updateTaskSchema,

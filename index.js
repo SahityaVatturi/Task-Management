@@ -26,20 +26,34 @@ app.use(helmet());
 
 // Enable Express to trust proxies
 app.set("trust proxy", 1);
-
-// Apply rate limiting to authentication routes
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: "Too many requests, please try again later.",
-});
-app.use(authLimiter); // Applies to all routes
-
 // Routes
 app.use("/api/v1", router);
-
 // Error handling
 app.use(errorHandler);
+
+const rateLimitWindowInMinutes = 15;
+const generalMaxRequests = 100;
+const authMaxRequests = 5;
+const rateLimitWindowInMs = rateLimitWindowInMinutes * 60 * 1000;
+
+const generalLimiter = rateLimit({
+  windowMs: rateLimitWindowInMs,
+  max: generalMaxRequests,
+  message: "Too many requests, please try again later.",
+});
+
+// Applies to all other routes
+app.use("/api/v1/users", generalLimiter);
+app.use("/api/v1/tasks", generalLimiter);
+
+const authLimiter = rateLimit({
+  windowMs: rateLimitWindowInMs,
+  max: authMaxRequests,
+  message: `Too many login attempts from this IP, please try again after ${rateLimitWindowInMinutes} minutes.`,
+});
+
+// Apply rate limiter only to /auth routes
+app.use("/api/v1/auth", authLimiter);
 
 // Start the server
 try {

@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
+const responseMessages = require("../constants/responseMessages");
 
 /**
  * Middleware for authenticating requests using JWT.
@@ -18,7 +19,7 @@ const authMiddleware = async (req, res, next) => {
   const token = req.header("Authorization")?.replace("Bearer ", "");
 
   if (!token) {
-    return res.status(401).json({ message: "Authentication required" });
+    return res.status(401).json({ message: responseMessages.AUTH_REQUIRED });
   }
 
   try {
@@ -26,13 +27,13 @@ const authMiddleware = async (req, res, next) => {
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid token" });
+      return res.status(401).json({ message: responseMessages.INVALID_TOKEN });
     }
-
     req.user = user;
     next();
   } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
+    console.log(error.stack);
+    res.status(401).json({ error: error.message });
   }
 };
 

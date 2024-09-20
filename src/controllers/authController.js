@@ -2,31 +2,44 @@ const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
+const responseMessages = require("../constants/responseMessages");
 
 /**
- * Registers a new user with the provided username, email, and password.
+ * Registers a new user with the provided firstName, lastName, email, and password.
  *
  * @param {Object} req - The HTTP request object containing user details.
  * @param {Object} res - The HTTP response object with user and token data or error message.
  */
 const register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
+    const existingUser = await User.findOne({ email: email });
 
-    const user = new User({
-      username,
+    if (existingUser) {
+      return res.status(409).json({ message: responseMessages.USER_EXISTS });
+    }
+
+    const newUser = new User({
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
     });
+    await newUser.save();
 
-    await user.save();
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
+    res.cookie("authToken", token, {
+      httpOnly: true,
+      secure: false, // Set to false allowing HTTP and HTTPS for dev environment
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      sameSite: "strict", // Helps prevent CSRF attacks by not sending the cookie with cross-site requests
+    });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-    res.status(201).json({ user, token });
+    res.status(201).json({ message: responseMessages.REGISTRATION_SUCCESS, data: { user: newUser, token: token } });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.log(error.stack);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -39,10 +52,10 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: responseMessages.INVALID_CREDENTIALS });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
@@ -54,49 +67,22 @@ const login = async (req, res) => {
       sameSite: "strict", // Helps prevent CSRF attacks by not sending the cookie with cross-site requests
     });
 
-    res.status(200).json({ user, token });
+    res.status(200).json({ message: responseMessages.LOGIN_SUCCESS, data: { user: user, token: token } });
   } catch (error) {
+    console.log(error.stack);
     res.status(500).json({ error: error.message });
   }
 };
 
 /**
- * Logs out the user. No server-side action is needed for JWT logout.
+ * Logs out the user by clearing the authentication token from cookies.
  *
  * @param {Object} req - The HTTP request object.
  * @param {Object} res - The HTTP response object confirming logout.
  */
 const logout = (req, res) => {
-  res.status(200).json({ message: "Logged out successfully" });
-};
-
-/**
- * Refreshes the JWT token using a valid refresh token.
- *
- * @param {Object} req - The HTTP request object containing the refresh token.
- * @param {Object} res - The HTTP response object with a new token or error message.
- */
-const refreshToken = async (req, res) => {
-  const refreshToken = req.body.refreshToken;
-
-  if (!refreshToken) {
-    return res.status(403).json({ message: "Refresh token is required" });
-  }
-
-  try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(403).json({ message: "User not found" });
-    }
-
-    const newToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
-
-    res.status(200).json({ token: newToken });
-  } catch (error) {
-    res.status(403).json({ message: "Invalid refresh token" });
-  }
+  res.clearCookie("authToken", { httpOnly: true, secure: true });
+  res.status(200).json({ message: responseMessages.LOGOUT_SUCCESS });
 };
 
 /**
@@ -109,7 +95,7 @@ const forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: responseMessages.USER_NOT_FOUND });
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
@@ -118,8 +104,9 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
     // Needs to send the resetToken via email in a real application
-    res.status(200).json({ resetToken });
+    return res.status(200).json({ message: responseMessages.TOKEN_GENERATED, token: resetToken });
   } catch (error) {
+    console.log(error.stack);
     res.status(500).json({ error: error.message });
   }
 };
@@ -139,7 +126,7 @@ const resetPassword = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired reset token" });
+      return res.status(400).json({ message: responseMessages.INVALID_TOKEN });
     }
 
     user.password = await bcrypt.hash(req.body.newPassword, 10);
@@ -148,8 +135,9 @@ const resetPassword = async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({ message: "Password reset successful" });
+    return res.status(200).json({ message: responseMessages.PASSWORD_RESET_SUCCESS });
   } catch (error) {
+    console.log(error.stack);
     res.status(500).json({ error: error.message });
   }
 };
@@ -163,9 +151,10 @@ const resetPassword = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const user = req.user;
-    const { _id, username, email } = user;
-    res.status(200).json({ _id, username, email });
+    const { _id, firstName, lastName, email } = user;
+    return res.status(200).json({ message: responseMessages.DATA_FETCHED, data: { id: _id, firstName, lastName, email } });
   } catch (error) {
+    console.log(error.stack);
     res.status(500).json({ error: error.message });
   }
 };
@@ -179,23 +168,25 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const updates = Object.keys(req.body);
-    const allowedUpdates = ["username", "email", "password"]; // Allow only certain fields to be updated
+    const allowedUpdates = ["firstName", "lastName", "email", "password"]; // Allow only certain fields to be updated
     const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
 
     if (!isValidOperation) {
-      return res.status(400).json({ message: "Invalid updates!" });
+      return res.status(400).json({ message: responseMessages.INVALID_UPDATE });
     }
+    const user = req.user;
     updates.forEach((update) => {
-      req.user[update] = req.body[update];
+      user[update] = req.body[update];
     });
     if (req.body.password) {
-      req.user.password = await bcrypt.hash(req.body.password, 10);
+      user.password = await bcrypt.hash(req.body.password, 10);
     }
-    await req.user.save();
-    const { _id, username, email } = req.user;
-    res.status(200).json({ _id, username, email });
+    await user.save();
+    const { _id, firstName, lastName, email } = user;
+    res.status(200).json({ message: responseMessages.DATA_UPDATED, data: { id: _id, firstName, lastName, email } });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.log(error.stack);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -203,7 +194,6 @@ const authController = {
   register,
   login,
   logout,
-  refreshToken,
   forgotPassword,
   resetPassword,
   getProfile,
