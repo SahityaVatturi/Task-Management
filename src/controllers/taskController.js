@@ -8,9 +8,9 @@ const responseMessages = require("../constants/responseMessages");
  * @param {Object} res - The HTTP response object to send back the created task.
  */
 const createTask = async (req, res) => {
-  const { title, description, status } = req.body;
+  const { title, description, status, dueDate } = req.body;
   const userId = req.user._id;
-  const newTask = new Task({ title, description, status, user: userId });
+  const newTask = new Task({ title, description, status, user: userId, dueDate: dueDate });
   try {
     await newTask.save();
     res.status(201).json({ message: responseMessages.TASK_CREATED, data: newTask });
