@@ -1,15 +1,21 @@
 const mongoose = require("mongoose");
 const request = require("supertest");
 const { MongoMemoryServer } = require("mongodb-memory-server");
+require("dotenv").config({ path: ".env.test" });
 const app = require("../index");
 
 let mongoServer;
 let token;
 
 beforeAll(async () => {
+  await mongoose.connection.close();
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
   await mongoose.connect(uri);
+
+  server = app.listen(process.env.PORT, () => {
+    console.log(`Test server running on port ${process.env.PORT}`);
+  });
 
   // Register and login a user to get a valid token for the task tests
   await request(app).post("/api/auth/register").send({
@@ -36,11 +42,12 @@ describe("Task API Tests", () => {
     const res = await request(app).post("/api/tasks").set("Authorization", `Bearer ${token}`).send({
       title: "New Task",
       description: "Task description",
-      //   dueDate: "2024-12-31",
+      // dueDate: "2024-12-31",
     });
 
     expect(res.statusCode).toBe(201);
-    expect(res.body).toHaveProperty("title", "New Task");
+    expect(res.body.data).toHaveProperty("title", "New Task");
+    expect(res.body.data).toHaveProperty("_id");
   });
 
   it("should not create a task with missing fields", async () => {
@@ -57,7 +64,7 @@ describe("Task API Tests", () => {
     const res = await request(app).get("/api/tasks").set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
   });
 
   // Update Task
@@ -69,7 +76,7 @@ describe("Task API Tests", () => {
       //   dueDate: "2024-12-31",
     });
 
-    const taskId = createRes.body._id;
+    const taskId = createRes.body.data._id;
 
     // Update the task
     const res = await request(app).put(`/api/tasks/${taskId}`).set("Authorization", `Bearer ${token}`).send({
@@ -77,7 +84,7 @@ describe("Task API Tests", () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty("title", "Updated Task Title");
+    expect(res.body.data).toHaveProperty("title", "Updated Task Title");
   });
 
   it("should not update another user's task", async () => {
@@ -93,6 +100,14 @@ describe("Task API Tests", () => {
     });
 
     const otherToken = otherLoginRes.body.token;
+
+    // Create a task with the first user
+    const createRes = await request(app).post("/api/tasks").set("Authorization", `Bearer ${token}`).send({
+      title: "Task",
+      description: "Test task",
+    });
+
+    const taskId = createRes.body.data._id;
 
     // Attempt to update the first user's task with the second user's token
     const res = await request(app).put(`/api/tasks/${taskId}`).set("Authorization", `Bearer ${otherToken}`).send({
@@ -112,7 +127,7 @@ describe("Task API Tests", () => {
       //   dueDate: "2024-12-31",
     });
 
-    const taskId = createRes.body._id;
+    const taskId = createRes.body.data._id;
 
     // Delete the task
     const res = await request(app).delete(`/api/tasks/${taskId}`).set("Authorization", `Bearer ${token}`);
@@ -126,10 +141,9 @@ describe("Task API Tests", () => {
     const createRes = await request(app).post("/api/tasks").set("Authorization", `Bearer ${otherToken}`).send({
       title: "Other User's Task",
       description: "Task description",
-      //   dueDate: "2024-12-31",
     });
 
-    const otherTaskId = createRes.body._id;
+    const otherTaskId = createRes.body.data._id;
 
     // Attempt to delete the second user's task with the first user's token
     const res = await request(app).delete(`/api/tasks/${otherTaskId}`).set("Authorization", `Bearer ${token}`);

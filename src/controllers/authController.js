@@ -36,7 +36,7 @@ const register = async (req, res) => {
       sameSite: "strict", // Helps prevent CSRF attacks by not sending the cookie with cross-site requests
     });
 
-    res.status(201).json({ message: responseMessages.REGISTRATION_SUCCESS, data: { user: newUser, token: token } });
+    res.status(201).json({ message: responseMessages.REGISTRATION_SUCCESS, token });
   } catch (error) {
     console.log(error.stack);
     res.status(500).json({ error: error.message });
@@ -47,7 +47,7 @@ const register = async (req, res) => {
  * Authenticates a user and returns a JWT token if credentials are valid.
  *
  * @param {Object} req - The HTTP request object containing email and password.
- * @param {Object} res - The HTTP response object with user and token data or error message.
+ * @param {Object} res - The HTTP response object with token data or error message.
  */
 const login = async (req, res) => {
   try {
@@ -67,7 +67,7 @@ const login = async (req, res) => {
       sameSite: "strict", // Helps prevent CSRF attacks by not sending the cookie with cross-site requests
     });
 
-    res.status(200).json({ message: responseMessages.LOGIN_SUCCESS, data: { user: user, token: token } });
+    res.status(200).json({ message: responseMessages.LOGIN_SUCCESS, token });
   } catch (error) {
     console.log(error.stack);
     res.status(500).json({ error: error.message });
@@ -142,62 +142,12 @@ const resetPassword = async (req, res) => {
   }
 };
 
-/**
- * Retrieves the profile information of the authenticated user.
- *
- * @param {Object} req - The HTTP request object with authenticated user details.
- * @param {Object} res - The HTTP response object with user profile data or error message.
- */
-const getProfile = async (req, res) => {
-  try {
-    const user = req.user;
-    const { _id, firstName, lastName, email } = user;
-    return res.status(200).json({ message: responseMessages.DATA_FETCHED, data: { id: _id, firstName, lastName, email } });
-  } catch (error) {
-    console.log(error.stack);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-/**
- * Updates the profile information of the authenticated user.
- *
- * @param {Object} req - The HTTP request object containing fields to update.
- * @param {Object} res - The HTTP response object with updated profile data or error message.
- */
-const updateProfile = async (req, res) => {
-  try {
-    const updates = Object.keys(req.body);
-    const allowedUpdates = ["firstName", "lastName", "email", "password"]; // Allow only certain fields to be updated
-    const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
-
-    if (!isValidOperation) {
-      return res.status(400).json({ message: responseMessages.INVALID_UPDATE });
-    }
-    const user = req.user;
-    updates.forEach((update) => {
-      user[update] = req.body[update];
-    });
-    if (req.body.password) {
-      user.password = await bcrypt.hash(req.body.password, 10);
-    }
-    await user.save();
-    const { _id, firstName, lastName, email } = user;
-    res.status(200).json({ message: responseMessages.DATA_UPDATED, data: { id: _id, firstName, lastName, email } });
-  } catch (error) {
-    console.log(error.stack);
-    res.status(500).json({ error: error.message });
-  }
-};
-
 const authController = {
   register,
   login,
   logout,
   forgotPassword,
   resetPassword,
-  getProfile,
-  updateProfile,
 };
 
 module.exports = authController;

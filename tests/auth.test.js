@@ -1,14 +1,20 @@
 const mongoose = require("mongoose");
 const request = require("supertest");
 const { MongoMemoryServer } = require("mongodb-memory-server");
+require("dotenv").config({ path: ".env.test" });
 const app = require("../index");
 
 let mongoServer;
 
 beforeAll(async () => {
+  await mongoose.connection.close();
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
   await mongoose.connect(uri);
+
+  server = app.listen(process.env.PORT, () => {
+    console.log(`Test server running on port ${process.env.PORT}`);
+  });
 });
 
 afterAll(async () => {
@@ -20,11 +26,14 @@ describe("Auth API Tests", () => {
   // User Registration
   it("should register a new user with valid data", async () => {
     const res = await request(app).post("/api/auth/register").send({
+      firstName: "Test",
+      lastName: "Test",
       email: "testuser@example.com",
-      password: "Test@1234",
+      password: "Test@12345",
     });
 
     expect(res.statusCode).toBe(201);
+    expect(res.body).toHaveProperty("message", "User registered successfully");
     expect(res.body).toHaveProperty("token");
   });
 
@@ -52,6 +61,7 @@ describe("Auth API Tests", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty("token");
+    expect(res.body.message).toBe("User logged in successfully");
   });
 
   it("should not login with incorrect credentials", async () => {
@@ -74,20 +84,7 @@ describe("Auth API Tests", () => {
     const res = await request(app).post("/api/auth/logout").set("Authorization", `Bearer ${loginRes.body.token}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("Successfully logged out");
-  });
-
-  // Refresh Token
-  it("should refresh a token", async () => {
-    const loginRes = await request(app).post("/api/auth/login").send({
-      email: "testuser2@example.com",
-      password: "Test@1234",
-    });
-
-    const res = await request(app).post("/api/auth/refresh-token").send({ refreshToken: loginRes.body.refreshToken });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty("token");
+    expect(res.body.message).toBe("User logged out successfully");
   });
 
   // Forgot Password
@@ -97,7 +94,8 @@ describe("Auth API Tests", () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("Password reset link sent to your email.");
+    expect(res.body).toHaveProperty("token");
+    expect(res.body.message).toBe("Token generated successfully");
   });
 
   // Reset Password
@@ -115,32 +113,6 @@ describe("Auth API Tests", () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("Password reset successful");
-  });
-
-  // Get User Profile
-  it("should get the profile of the logged-in user", async () => {
-    const loginRes = await request(app).post("/api/auth/login").send({
-      email: "testuser2@example.com",
-      password: "Test@1234",
-    });
-
-    const res = await request(app).get("/api/auth/profile").set("Authorization", `Bearer ${loginRes.body.token}`);
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.email).toBe("testuser2@example.com");
-  });
-
-  // Update User Profile
-  it("should update the profile of the logged-in user", async () => {
-    const loginRes = await request(app).post("/api/auth/login").send({
-      email: "testuser2@example.com",
-      password: "Test@1234",
-    });
-
-    const res = await request(app).put("/api/auth/profile").set("Authorization", `Bearer ${loginRes.body.token}`).send({ name: "New Name" });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body.name).toBe("New Name");
+    expect(res.body.message).toBe("Password reset successfully");
   });
 });
