@@ -30,14 +30,6 @@ const register = async (req, res) => {
     });
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
-    res.cookie("authToken", token, {
-      httpOnly: true,
-      secure: false, // Set to false allowing HTTP and HTTPS for dev environment
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      sameSite: "strict", // Helps prevent CSRF attacks by not sending the cookie with cross-site requests
-    });
-
     res.status(201).json({ message: responseMessages.REGISTRATION_SUCCESS, token });
   } catch (error) {
     console.log(error.stack);
@@ -62,13 +54,6 @@ const login = async (req, res) => {
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 
-    res.cookie("authToken", token, {
-      httpOnly: true,
-      secure: false, // Set to false allowing HTTP and HTTPS for dev environment
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      sameSite: "strict", // Helps prevent CSRF attacks by not sending the cookie with cross-site requests
-    });
-
     res.status(200).json({ message: responseMessages.LOGIN_SUCCESS, token });
   } catch (error) {
     console.log(error.stack);
@@ -77,14 +62,13 @@ const login = async (req, res) => {
 };
 
 /**
- * Logs out the user by clearing the authentication token from cookies.
+ * Logs out the user. No server-side action is needed for JWT logout.
  *
  * @param {Object} req - The HTTP request object.
  * @param {Object} res - The HTTP response object confirming logout.
  */
 const logout = (req, res) => {
-  res.clearCookie("authToken", { httpOnly: true, secure: true });
-  res.status(200).json({ message: responseMessages.LOGOUT_SUCCESS });
+  res.status(200).json({ message: "Logged out successfully" });
 };
 
 /**
