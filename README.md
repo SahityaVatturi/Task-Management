@@ -85,6 +85,11 @@ This is a full-stack Task Management application built with Node.js, Express, Mo
 - **PUT /api/tasks/:id** - Update a task by ID
 - **DELETE /api/tasks/:id** - Delete a task by ID
 
+#### User
+
+- **GET /api/users/profile** - Get the authenticated user’s profile
+- **PUT /api/users/profile** - Update the authenticated user’s profile
+
 ## Testing
 
 Run tests using Jest:

@@ -27,7 +27,7 @@ const createTask = async (req, res) => {
 const getAllTasks = async (req, res) => {
   try {
     const user = req.user._id;
-    const tasks = await Task.find({ user }).select("_id title description status createdAt updatedAt");
+    const tasks = await Task.find({ user }).select("_id title description status createdAt updatedAt dueDate");
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -40,18 +40,7 @@ const getAllTasks = async (req, res) => {
  * @param {Object} req - The HTTP request object containing the task ID as a URL parameter.
  * @param {Object} res - The HTTP response object containing the task data or an error message.
  */
-const getTaskById = async (req, res) => {
-  try {
-    const user = req.user._id;
-    const task = await Task.findOne({ _id: req.params.id, user });
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
-    res.status(200).json(task);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+
 
 /**
  * Updates a specific task by its ID for the authenticated user.
@@ -98,7 +87,6 @@ const deleteTask = async (req, res) => {
 const taskController = {
   createTask,
   getAllTasks,
-  getTaskById,
   updateTask,
   deleteTask,
 };
