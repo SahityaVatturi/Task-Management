@@ -20,6 +20,7 @@ const responseMessages = Object.freeze({
 
   AUTH_REQUIRED: "Authentication required!",
   UNAUTHORISED: "Unauthorised!",
+  AUTHORISED: "User authenticated",
 
   DATA_STORED: "Data stored successfully",
   DATA_FETCHED: "Data fetched successfully",

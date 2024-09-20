@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const responseMessages = require("../constants/responseMessages");
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /**
  * Registers a new user with the provided firstName, lastName, email, and password.
@@ -142,12 +144,36 @@ const resetPassword = async (req, res) => {
   }
 };
 
+/**
+ * Verifies the Google ID token and processes the user's information.
+ *
+ * @param {Object} req - The HTTP request object containing the ID token in the body.
+ * @param {Object} res - The HTTP response object used to send the response.
+ */
+const googleSignIn = async (req, res) => {
+  const { token } = req.body;
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    console.log(payload, 155);
+    // Process the payload (create user in your database)
+    res.status(200).json({ message: responseMessages.AUTHORISED, user: payload });
+  } catch (error) {
+    console.log(error.stack);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const authController = {
   register,
   login,
   logout,
   forgotPassword,
   resetPassword,
+  googleSignIn,
 };
 
 module.exports = authController;
