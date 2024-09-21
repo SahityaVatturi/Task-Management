@@ -141,10 +141,24 @@ const googleSignIn = async (req, res) => {
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-    const payload = ticket.getPayload();
-    console.log(payload, 155);
-    // Process the payload (create user in your database)
-    res.status(200).json({ message: responseMessages.AUTHORISED, user: payload });
+
+    const { given_name, family_name, email, sub } = ticket.getPayload();
+
+    // Check if the user already exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        firstName: given_name,
+        lastName: family_name,
+        email,
+        googleId: sub,
+      });
+
+      await user.save();
+    }
+
+    res.status(200).json({ message: responseMessages.AUTHORISED });
   } catch (error) {
     console.log(error.stack);
     res.status(500).json({ message: error.message });
